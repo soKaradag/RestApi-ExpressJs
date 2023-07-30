@@ -1,12 +1,17 @@
 //Add packages
-const express = require("express")
-const sqlite3 = require("sqlite3").verbose()
+const express = require("express");
+const sqlite3 = require("sqlite3").verbose();
+const userRoutes = require("./routes/users");
+const authRoutes = require("./routes/auth");
 
 //Create express app
 const app = express();
 
+// Middleware - Express JSON Parser
+app.use(express.json());
+
 //Server port
-var HTTP_PORT = 3000
+const HTTP_PORT = 3000;
 
 //Start server
 app.listen(HTTP_PORT, () => {
@@ -26,16 +31,11 @@ app.get("/", (req, res) => {
     res.json({"message": "Hello"})
 });
 
-//Users endpoint
-app.get("/users", (req, res) => {
-    db.all('SELECT id, username FROM users', (err, rows) => {
-        if (err) {
-            console.error(err)
-        } else {
-            res.json(rows);
-        }
-    });
-});
+//Add users routes
+app.use("/users", userRoutes(db));
+
+//Add auth routes
+app.use("/register", authRoutes(db));
 
 //Default response
 app.use(function(req, res) {

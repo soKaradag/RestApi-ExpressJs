@@ -33,9 +33,11 @@ app.get("/", (req, res) => {
 
 //Add users routes
 app.use("/users", userRoutes(db));
+app.use("/users/:id", userRoutes(db));
 
 //Add auth routes
 app.use("/register", authRoutes(db));
+app.use("/login", authRoutes(db));
 
 //Default response
 app.use(function(req, res) {

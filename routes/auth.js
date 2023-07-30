@@ -2,6 +2,7 @@
 const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcrypt");
+const jwt = require('../security/jwt');
 
 // Function takes db and sets auth routes.
 function authRoutes(db) {
@@ -23,12 +24,25 @@ function authRoutes(db) {
                     console.error(err);
                     return res.status(500).json({ error: 'An error occurred while adding the user to the database' });
                 }
-                
+
                 res.json({message: "User registered successfully."});
             });
         });
     });
 
+    //Login and create jwt
+    router.post("/login", (req, res) => {
+        const { username, password } = req.body;
+
+        //If auth is success create jwt
+        const payload = { username: username }; //JWT content
+        const token = jwt.generateJWT(payload);
+
+        //Return jwt
+        res.json({ token: token });
+    });
+
+    //Return new updated route items.
     return router;
 }
 

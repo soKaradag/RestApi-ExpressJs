@@ -3,9 +3,13 @@ const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcrypt");
 const jwt = require('../security/jwt');
+const verifyApiKey = require('../security/apiKey');
 
 // Function takes db and sets auth routes.
 function authRoutes(db) {
+    //Check for api key
+    router.use(verifyApiKey);
+
     //Register endpoint
     router.post("/register", (req, res) => {
         //Take input from user

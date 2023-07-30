@@ -1,9 +1,13 @@
 //Add packages
 const express = require("express");
 const router = express.Router();
+const verifyApiKey = require('../security/apiKey');
 
 // Function takes db and sets users routes.
 function userRoutes(db) {
+    //Check for api key
+    router.use(verifyApiKey);
+    
     //Users endpoint
     router.get("/", (req, res) => {
         db.all('SELECT id, username FROM users', (err, rows) => {

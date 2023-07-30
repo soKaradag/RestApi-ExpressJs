@@ -26,18 +26,12 @@ db.serialize(() => {
     db.run('CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, password TEXT)');
 });
 
-//Root endpoint
-app.get("/", (req, res) => {
-    res.json({"message": "Hello"})
-});
-
 //Add users routes
 app.use("/users", userRoutes(db));
 app.use("/users/:id", userRoutes(db));
 
 //Add auth routes
-app.use("/register", authRoutes(db));
-app.use("/login", authRoutes(db));
+app.use("/", authRoutes(db));
 
 //Default response
 app.use(function(req, res) {

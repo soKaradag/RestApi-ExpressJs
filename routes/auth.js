@@ -38,12 +38,38 @@ function authRoutes(db) {
     router.post("/login", (req, res) => {
         const { username, password } = req.body;
 
-        //If auth is success create jwt
-        const payload = { username: username }; //JWT content
-        const token = jwt.generateJWT(payload);
+        // Check if the user exists in the database
+        db.get('SELECT id, username, password FROM users WHERE username = ?', username, (err, user) => {
+            if (err) {
+                console.error(err);
+                return res.status(500).json({ error: 'An error occurred while retrieving user data from the database' });
+            }
 
-        //Return jwt
-        res.json({ token: token });
+            // Check if the user with the given username exists
+            if (!user) {
+                return res.status(401).json({ error: 'User not found' });
+            }
+
+            // Check if the password is correct
+            bcrypt.compare(password, user.password, (err, isMatch) => {
+                if (err) {
+                    console.error(err);
+                    return res.status(500).json({ error: 'An error occurred while comparing passwords' });
+                }
+
+                if (!isMatch) {
+                    return res.status(401).json({ error: 'Invalid password' });
+                }
+
+                //If auth is successful, create jwt
+                const payload = { id: user.id, username: user.username }; //JWT content
+                const token = jwt.generateJWT(payload);
+                console.log("User logged in successfully.")
+
+                //Return jwt
+                res.json({ token: token });
+            });
+        });
     });
 
     //Return new updated route items.

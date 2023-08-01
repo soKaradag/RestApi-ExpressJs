@@ -21,24 +21,21 @@ function userRoutes(db) {
     });
 
     //Get specific user from database
-    router.get("/users/:id", (req, res) => {
-        //Take id from user.
+    router.get("/:id", (req, res) => {
         const userId = req.params.id;
-
-        //Take specific user from database acording to id.
         db.get('SELECT id, username FROM users WHERE id = ?', userId, (err, row) => {
             if (err) {
-            console.error(err);
-            res.status(500).json({ error: 'An error occurred while retrieving data from the database', details: err.message });
+                console.error(err);
+                res.status(500).json({ error: 'An error occurred while retrieving data from the database', details: err.message });
             } else {
-            if (row) {
-             res.json(row);
-            } else {
-             res.status(404).json({ message: 'User not found' });
-            }
+                if (row) {
+                    res.json(row);
+                } else {
+                    res.status(404).json({ message: 'User not found' });
+                }
             }
         });
-    });
+    })
 
     // Return new updated route items.
     return router; 

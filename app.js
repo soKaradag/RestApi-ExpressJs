@@ -3,9 +3,13 @@ const express = require("express");
 const sqlite3 = require("sqlite3").verbose();
 const userRoutes = require("./routes/users");
 const authRoutes = require("./routes/auth");
+const limiter = require('./security/rateLimit');
 
 //Create express app
 const app = express();
+
+//Add Rate Limit
+app.use(limiter);
 
 // Middleware - Express JSON Parser
 app.use(express.json());
@@ -15,7 +19,7 @@ const HTTP_PORT = 3000;
 
 //Start server
 app.listen(HTTP_PORT, () => {
-    console.log(`Serdar running on port ${HTTP_PORT}`);
+    console.log(`Server running on port ${HTTP_PORT}`);
 });
 
 //Define database
@@ -28,10 +32,10 @@ db.serialize(() => {
 
 //Add users routes
 app.use("/users", userRoutes(db));
-app.use("/users/:id", userRoutes(db));
 
 //Add auth routes
-app.use("/", authRoutes(db));
+app.use("/auth", authRoutes(db));
+
 
 //Default response
 app.use(function(req, res) {

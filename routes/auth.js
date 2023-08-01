@@ -13,7 +13,12 @@ function authRoutes(db) {
     //Register endpoint
     router.post("/register", (req, res) => {
         //Take input from user
-        const {username, password} = req.body;
+        const { username, password } = req.body;
+
+        // Check if the username and password are provided
+        if (!username || !password) {
+            return res.status(400).json({ error: 'Username and password are required' });
+        }
 
         //Hashing password with bcrypt and add to database
         bcrypt.hash(password, 10, (err, hashedPassword) => {
@@ -29,7 +34,7 @@ function authRoutes(db) {
                     return res.status(500).json({ error: 'An error occurred while adding the user to the database' });
                 }
 
-                res.json({message: "User registered successfully."});
+                res.json({ message: "User registered successfully." });
             });
         });
     });

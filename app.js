@@ -3,6 +3,7 @@ const express = require("express");
 const sqlite3 = require("sqlite3").verbose();
 const userRoutes = require("./routes/users");
 const authRoutes = require("./routes/auth");
+const postRoutes = require("./routes/posts");
 const limiter = require('./security/rateLimit');
 
 //Create express app
@@ -36,10 +37,13 @@ app.use("/users", userRoutes(db));
 //Add auth routes
 app.use("/auth", authRoutes(db));
 
+//Add post routes
+app.use("/post", postRoutes(db));
+
 
 //Default response
-app.use(function(req, res) {
+app.use(function (req, res) {
     res.status(404);
-    res.json({"message": "There is no file like that."})
+    res.json({ "message": "There is no file like that." })
 });
 

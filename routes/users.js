@@ -7,7 +7,7 @@ const verifyApiKey = require('../security/apiKey');
 function userRoutes(db) {
     //Check for api key
     router.use(verifyApiKey);
-    
+
     //Users endpoint
     router.get("/", (req, res) => {
         db.all('SELECT id, username FROM users', (err, rows) => {
@@ -38,7 +38,7 @@ function userRoutes(db) {
     });
 
     // Return new updated route items.
-    return router; 
+    return router;
 }
 
 module.exports = userRoutes;

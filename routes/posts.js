@@ -3,7 +3,6 @@ const express = require("express");
 const verifyApiKey = require('../security/apiKey');
 const router = express.Router();
 const jwt = require('../security/jwt');
-const verifyJWT = jwt.verifyJWT;
 
 // Function takes db and sets post routes.
 function postRoutes(db) {
@@ -51,6 +50,37 @@ function postRoutes(db) {
     });
 
     //Delete post
+    router.delete("/deletePost", (req, res) => {
+        const postId = req.body.id;
+        const currentUserId = req.authData.id;
+
+        // Check if the post exists and get its owner ID
+        db.get('SELECT userid FROM posts WHERE id = ?', postId, (err, post) => {
+            if (err) {
+                console.log(err);
+                return res.status(500).json({ error: "An error occurred while fetching the post from the database", details: err.message });
+            }
+
+            if (!post) {
+                return res.status(404).json({ error: "Post not found" });
+            }
+
+            if (post.userid !== currentUserId) {
+                return res.status(403).json({ error: "You are not authorized to delete this post" });
+            }
+
+            // Delete the post from the database
+            db.run('DELETE FROM posts WHERE id = ?', postId, (err) => {
+                if (err) {
+                    console.log(err);
+                    return res.status(500).json({ error: "An error occurred while deleting the post from the database", details: err.message });
+                }
+
+                res.json({ message: "Post deleted successfully" });
+            });
+        });
+    });
+
 
     //Get all posts
 

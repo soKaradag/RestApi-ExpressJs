@@ -2,11 +2,29 @@
 const express = require("express");
 const router = express.Router();
 const verifyApiKey = require('../security/apiKey');
+const verifyApiKey = require('../security/apiKey');
 
 // Function takes db and sets users routes.
 function userRoutes(db) {
     //Check for api key
     router.use(verifyApiKey);
+
+    // Verify JWT token
+    router.use((req, res, next) => {
+        const token = req.header('Authorization')?.replace('Bearer ', '');
+        if (!token) {
+            return res.status(401).json({ error: 'Authorization token not provided' });
+        }
+
+        const decodedToken = verifyJWT(token);
+        if (!decodedToken) {
+            return res.status(401).json({ error: 'Invalid or expired token' });
+        }
+
+        // Add user ID to the request object
+        req.userid = decodedToken.id;
+        next();
+    });
 
     //Users endpoint
     router.get("/", (req, res) => {

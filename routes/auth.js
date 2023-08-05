@@ -78,21 +78,21 @@ function authRoutes(db) {
     });
 
     //Delete user
-     router.delete("/:id", (req, res) => {
+    router.delete("/:id", (req, res) => {
         const userId = req.params.id; //user want to delete
         const authUserId = req.authData.id; //currenUser
-    
+
         //Check the currentUser and the user want to delete are same
         if (userId !== authUserId) {
             return res.status(403).json({ error: "You are not authorized to delete this user" });
         }
-    
+
         db.run('DELETE FROM users WHERE id = ?', userId, (err) => {
             if (err) {
                 console.log(err);
-                res.status(500).json({error: "An arror uccurred while deleting the user from database", details: err.message});
+                res.status(500).json({ error: "An arror uccurred while deleting the user from database", details: err.message });
             } else {
-                res.json({message: "User deleted successfully"})
+                res.json({ message: "User deleted successfully" })
             }
         });
     });

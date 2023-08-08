@@ -2,10 +2,9 @@
 const express = require("express");
 const verifyApiKey = require('../security/apiKey');
 const router = express.Router();
-const jwt = require('../security/jwt');
 
 // Function takes db and sets post routes.
-function postRoutes(db) {
+function postRoutes(db, verifyJWT) {
     //Verify api key
     router.use(verifyApiKey);
 
@@ -50,7 +49,7 @@ function postRoutes(db) {
     });
 
     //Delete post
-    router.delete("/deletePost", (req, res) => {
+    router.delete("/:id", (req, res) => {
         const postId = req.body.id;
         const currentUserId = req.authData.id;
 
@@ -83,6 +82,20 @@ function postRoutes(db) {
 
 
     //Get all posts
+    router.get("/", (req, res) => {
+        db.get('SELECT * FROM posts', (err, row) => {
+            if (err) {
+                console.error(err);
+                res.status(500).json({ error: 'An error occurred while retrieving data from the database', details: err.message });
+            } else {
+                if (row) {
+                    res.json(row);
+                } else {
+                    res.status(404).json({ message: 'Post not found' });
+                }
+            }
+        });
+    });
 
     //Get specific post
 

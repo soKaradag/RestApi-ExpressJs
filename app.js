@@ -5,6 +5,9 @@ const userRoutes = require("./routes/users");
 const authRoutes = require("./routes/auth");
 const postRoutes = require("./routes/posts");
 const limiter = require('./security/rateLimit');
+const jwt = require('./security/jwt');
+const { verifyJWT } = require('./security/jwt');
+
 
 //Create express app
 const app = express();
@@ -33,13 +36,13 @@ db.serialize(() => {
 });
 
 //Add users routes
-app.use("/users", userRoutes(db));
+app.use("/users", userRoutes(db, verifyJWT));
 
 //Add auth routes
 app.use("/auth", authRoutes(db));
 
 //Add post routes
-app.use("/post", postRoutes(db));
+app.use("/posts", postRoutes(db, verifyJWT));
 
 
 //Default response

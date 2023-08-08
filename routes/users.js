@@ -2,10 +2,10 @@
 const express = require("express");
 const router = express.Router();
 const verifyApiKey = require('../security/apiKey');
-const verifyApiKey = require('../security/apiKey');
+
 
 // Function takes db and sets users routes.
-function userRoutes(db) {
+function userRoutes(db, verifyJWT) { // verifyJWT parametresini ekledim
     //Check for api key
     router.use(verifyApiKey);
 
@@ -26,7 +26,7 @@ function userRoutes(db) {
         next();
     });
 
-    //Users endpoint
+    //Get all users
     router.get("/", (req, res) => {
         db.all('SELECT id, username FROM users', (err, rows) => {
             if (err) {
@@ -51,6 +51,26 @@ function userRoutes(db) {
                 } else {
                     res.status(404).json({ message: 'User not found' });
                 }
+            }
+        });
+    });
+
+    //Delete user
+    router.delete("/:id", (req, res) => { // :deletedId'i :id olarak düzelttim
+        const userId = req.params.id; // user want to delete
+        const authUserId = req.userid; // req.authData.id yerine req.userid kullandım
+
+        // Check the currentUser and the user want to delete are same
+        if (userId !== authUserId) {
+            return res.status(403).json({ error: "You are not authorized to delete this user" });
+        }
+
+        db.run('DELETE FROM users WHERE id = ?', userId, (err) => {
+            if (err) {
+                console.log(err);
+                res.status(500).json({ error: "An error occurred while deleting the user from database", details: err.message });
+            } else {
+                res.json({ message: "User deleted successfully" })
             }
         });
     });

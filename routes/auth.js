@@ -5,27 +5,12 @@ const bcrypt = require("bcrypt");
 const jwt = require('../security/jwt');
 const verifyApiKey = require('../security/apiKey');
 
+
+
 // Function takes db and sets auth routes.
 function authRoutes(db) {
     //Check for api key
     router.use(verifyApiKey);
-
-    // Verify JWT token
-    router.use((req, res, next) => {
-        const token = req.header('Authorization')?.replace('Bearer ', '');
-        if (!token) {
-            return res.status(401).json({ error: 'Authorization token not provided' });
-        }
-
-        const decodedToken = verifyJWT(token);
-        if (!decodedToken) {
-            return res.status(401).json({ error: 'Invalid or expired token' });
-        }
-
-        // Add user ID to the request object
-        req.userid = decodedToken.id;
-        next();
-    });
 
     //Register endpoint
     router.post("/register", (req, res) => {
@@ -91,26 +76,6 @@ function authRoutes(db) {
                 //Return jwt
                 res.json({ token: token });
             });
-        });
-    });
-
-    //Delete user
-    router.delete("/:id", (req, res) => {
-        const userId = req.params.id; //user want to delete
-        const authUserId = req.authData.id; //currenUser
-
-        //Check the currentUser and the user want to delete are same
-        if (userId !== authUserId) {
-            return res.status(403).json({ error: "You are not authorized to delete this user" });
-        }
-
-        db.run('DELETE FROM users WHERE id = ?', userId, (err) => {
-            if (err) {
-                console.log(err);
-                res.status(500).json({ error: "An arror uccurred while deleting the user from database", details: err.message });
-            } else {
-                res.json({ message: "User deleted successfully" })
-            }
         });
     });
 

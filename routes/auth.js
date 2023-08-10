@@ -74,16 +74,53 @@ function authRoutes(db) {
                 //Return jwt
                 res.json({ token: token });
 
+                //Add users to the onlines when they are logged in.
                 db.run('INSERT INTO onlines(userid, username) VALUES (?,?)', [user.id, username], (err) => {
                     if (err) {
                         console.error(err);
                         return res.status(500).json({ error: 'An error occurred while adding the user to the onlines' });
                     }
     
-                    res.json({ message: `User ${username} online.` });
+                    console.log(`User ${username} added to onlines.`);
                 });
                 
             });
+        });
+    });
+
+    // Middleware for verifying JWT token
+    function verifyToken(req, res, next) {
+        const token = req.header('Authorization')?.replace('Bearer ', '');
+
+        if (!token) {
+            return res.status(401).json({ error: 'Authorization token not provided' });
+        }
+
+        const decodedToken = verifyJWT(token);
+
+        if (!decodedToken) {
+            return res.status(401).json({ error: 'Invalid or expired token' });
+        }
+
+        // Add user ID to the request object
+        req.userid = decodedToken.id;
+        next();
+    }
+
+    //Logout function
+    router.post("/logout", verifyToken, (req, res) => {
+        //Get user info
+        const {userid} = req.body;
+
+        //Delete user from onlines
+        db.run('DELETE FROM onlines WHERE userid = ?', [userid], (err) => {
+            if (err) {
+                console.error(err);
+                return res.status(500).json({ error: 'An error occurred while removing the user from onlines' });
+            }
+    
+            console.log(`User ${username} has been logged out and removed from onlines.`);
+            res.json({ message: `User ${username} has been logged out.` });
         });
     });
 

@@ -36,6 +36,7 @@ db.serialize(() => {
     db.run('CREATE TABLE IF NOT EXISTS onlines(userid INTEGER, username TEXT)');
 });
 
+
 //Add users routes
 app.use("/users", userRoutes(db, verifyJWT));
 

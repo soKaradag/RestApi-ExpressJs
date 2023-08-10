@@ -73,6 +73,16 @@ function authRoutes(db) {
 
                 //Return jwt
                 res.json({ token: token });
+
+                db.run('INSERT INTO onlines(userid, username) VALUES (?,?)', [user.id, username], (err) => {
+                    if (err) {
+                        console.error(err);
+                        return res.status(500).json({ error: 'An error occurred while adding the user to the onlines' });
+                    }
+    
+                    res.json({ message: `User ${username} online.` });
+                });
+                
             });
         });
     });

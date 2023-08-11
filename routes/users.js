@@ -5,7 +5,7 @@ const verifyApiKey = require('../security/apiKey');
 
 
 // Function takes db and sets users routes.
-function userRoutes(db, verifyJWT) { // verifyJWT parametresini ekledim
+function userRoutes(db, verifyJWT) {
     //Check for api key
     router.use(verifyApiKey);
 

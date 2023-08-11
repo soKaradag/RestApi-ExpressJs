@@ -6,7 +6,7 @@ const jwt = require('../security/jwt');
 const verifyApiKey = require('../security/apiKey');
 
 // Function takes db and sets auth routes.
-function authRoutes(db) {
+function authRoutes(db, verifyJWT) {
     //Check for api key
     router.use(verifyApiKey);
 
@@ -80,7 +80,8 @@ function authRoutes(db) {
                         console.error(err);
                         return res.status(500).json({ error: 'An error occurred while adding the user to the onlines' });
                     }
-    
+                    
+                    console.log(`User ${user.id} added to onlines.`);
                     console.log(`User ${username} added to onlines.`);
                 });
                 
@@ -88,39 +89,34 @@ function authRoutes(db) {
         });
     });
 
-    // Middleware for verifying JWT token
-    function verifyToken(req, res, next) {
-        const token = req.header('Authorization')?.replace('Bearer ', '');
+    // Logout function
+    router.post('/:id', (req, res, next) => { // <-- Add 'next' as an argument
+        console.log('Received logout request');
 
+        const token = req.header('Authorization')?.replace('Bearer ', '');
+        console.log(`token: ${token}`);
         if (!token) {
             return res.status(401).json({ error: 'Authorization token not provided' });
         }
 
         const decodedToken = verifyJWT(token);
-
         if (!decodedToken) {
             return res.status(401).json({ error: 'Invalid or expired token' });
         }
 
         // Add user ID to the request object
         req.userid = decodedToken.id;
-        next();
-    }
+        console.log("User ID from decoded token:", req.userid);
 
-    //Logout function
-    router.post("/logout", verifyToken, (req, res) => {
-        //Get user info
-        const {userid} = req.body;
-
-        //Delete user from onlines
-        db.run('DELETE FROM onlines WHERE userid = ?', [userid], (err) => {
+        // Delete user from onlines (if they are online)
+        db.run('DELETE FROM onlines WHERE userid = ?', [req.userid], (err) => { // <-- Use 'req.userid' here
             if (err) {
                 console.error(err);
                 return res.status(500).json({ error: 'An error occurred while removing the user from onlines' });
             }
-    
-            console.log(`User ${username} has been logged out and removed from onlines.`);
-            res.json({ message: `User ${username} has been logged out.` });
+
+            console.log(`User ${req.userid} has been logged out and removed from onlines.`);
+            res.json({ message: `User ${req.userid} has been logged out.` });
         });
     });
 

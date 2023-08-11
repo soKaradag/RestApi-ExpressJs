@@ -33,7 +33,7 @@ const db = new sqlite3.Database('.database.db');
 db.serialize(() => {
     db.run('CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, password TEXT)');
     db.run('CREATE TABLE IF NOT EXISTS posts (id INTEGER PRIMARY KEY AUTOINCREMENT, userid INTEGER, title TEXT, content TEXT)');
-    db.run('CREATE TABLE IF NOT EXISTS onlines(userid INTEGER, username TEXT)');
+    db.run('CREATE TABLE IF NOT EXISTS onlines (userid INTEGER, username TEXT)');
 });
 
 
@@ -41,7 +41,7 @@ db.serialize(() => {
 app.use("/users", userRoutes(db, verifyJWT));
 
 //Add auth routes
-app.use("/auth", authRoutes(db));
+app.use("/auth", authRoutes(db, verifyJWT));
 
 //Add post routes
 app.use("/posts", postRoutes(db, verifyJWT));

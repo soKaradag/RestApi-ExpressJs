@@ -56,22 +56,33 @@ function userRoutes(db, verifyJWT) {
     });
 
     //Delete user
-    router.delete("/:id", (req, res) => { // :deletedId'i :id olarak düzelttim
-        const userId = req.params.id; // user want to delete
-        const authUserId = req.userid; // req.authData.id yerine req.userid kullandım
+    router.post('/:id', (req, res) => {
+        console.log('Received delete request');
 
-        // Check the currentUser and the user want to delete are same
-        if (userId !== authUserId) {
-            return res.status(403).json({ error: "You are not authorized to delete this user" });
+        const token = req.header('Authorization')?.replace('Bearer ', '');
+        console.log(`token: ${token}`);
+        if (!token) {
+            return res.status(401).json({ error: 'Authorization token not provided' });
         }
 
-        db.run('DELETE FROM users WHERE id = ?', userId, (err) => {
+        const decodedToken = verifyJWT(token);
+        if (!decodedToken) {
+            return res.status(401).json({ error: 'Invalid or expired token' });
+        }
+
+        // Add user ID to the request object
+        req.userid = decodedToken.id;
+        console.log("User ID from decoded token:", req.userid);
+
+        // Delete user from users
+        db.run('DELETE FROM users WHERE id = ?', [req.userid], (err) => { // <-- Use 'req.userid' here
             if (err) {
-                console.log(err);
-                res.status(500).json({ error: "An error occurred while deleting the user from database", details: err.message });
-            } else {
-                res.json({ message: "User deleted successfully" })
+                console.error(err);
+                return res.status(500).json({ error: 'An error occurred while removing the user from onlines' });
             }
+
+            console.log(`User ${req.userid} has been deleted`);
+            res.json({ message: `User ${req.userid} has been deleted.` });
         });
     });
 

@@ -90,7 +90,7 @@ function authRoutes(db, verifyJWT) {
     });
 
     // Logout function
-    router.post('/:id', (req, res, next) => { // <-- Add 'next' as an argument
+    router.post('/:id', (req, res) => {
         console.log('Received logout request');
 
         const token = req.header('Authorization')?.replace('Bearer ', '');

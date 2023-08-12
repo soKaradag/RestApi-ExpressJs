@@ -11,12 +11,15 @@ function userRoutes(db, verifyJWT) {
 
     // Verify JWT token
     router.use((req, res, next) => {
+        //Select token from header.
         const token = req.header('Authorization')?.replace('Bearer ', '');
+
         if (!token) {
             return res.status(401).json({ error: 'Authorization token not provided' });
         }
 
         const decodedToken = verifyJWT(token);
+
         if (!decodedToken) {
             return res.status(401).json({ error: 'Invalid or expired token' });
         }
@@ -27,7 +30,7 @@ function userRoutes(db, verifyJWT) {
     });
 
     //Get all users
-    router.get("/", (req, res) => {
+    router.get("/", (_, res) => {
         db.all('SELECT id, username FROM users', (err, rows) => {
             if (err) {
                 console.error(err);
@@ -56,7 +59,7 @@ function userRoutes(db, verifyJWT) {
     });
 
     //Delete user
-    router.post('/:id', (req, res) => {
+    router.delete('/:id', (req, res) => {
         console.log('Received delete request');
 
         const token = req.header('Authorization')?.replace('Bearer ', '');

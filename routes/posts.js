@@ -42,15 +42,15 @@ function postRoutes(db, verifyJWT) {
 
         // Add user ID to the request object
         req.currentUserId = decodedToken.id;
+        req.currentusername = decodedToken.username;
         console.log("User ID from decoded token:", req.currentUserId);
+        console.log("User ID from decoded token:", req.currentusername);
 
-        if (!req.currentUserId || !title || !content) {
-            return res.status(400).json({ error: 'User ID, title, and content are required' });
+        if (!req.currentUserId || !req.currentusername || !title || !content) {
+            return res.status(400).json({ error: 'User ID, username, title, and content are required' });
         }
 
-        console.log("Parameters are taken");
-
-        db.run('INSERT INTO posts (userid, title, content) VALUES (?,?,?)', [req.currentUserId, title, content], (err) => {
+        db.run('INSERT INTO posts (userid, username, title, content) VALUES (?,?,?,?)', [req.currentUserId, req.currentusername, title, content], (err) => {
             if (err) {
                 console.error(err);
                 return res.status(500).json({ error: 'An error occurred while adding the post to the database' });
@@ -111,7 +111,7 @@ function postRoutes(db, verifyJWT) {
 
     //Get all posts
     router.get("/", (_, res) => {
-        db.all('SELECT id, title, content, userid FROM posts', (err, row) => {
+        db.all('SELECT id, title, content, userid, username FROM posts', (err, row) => {
             if (err) {
                 console.error(err);
                 res.status(500).json({ error: 'An error occurred while retrieving data from the database', details: err.message });

@@ -59,7 +59,7 @@ function userRoutes(db, verifyJWT) {
     });
 
     //Delete user
-    router.delete('/:id', (req, res) => {
+    router.delete('/deleteUser', (req, res) => {
         console.log('Received delete request');
 
         const token = req.header('Authorization')?.replace('Bearer ', '');
@@ -77,16 +77,29 @@ function userRoutes(db, verifyJWT) {
         req.userid = decodedToken.id;
         console.log("User ID from decoded token:", req.userid);
 
-        // Delete user from users
-        db.run('DELETE FROM users WHERE id = ?', [req.userid], (err) => { // <-- Use 'req.userid' here
+        //Delete user from onlines
+        db.run('DELETE FROM onlines WHERE userid = ?', [req.userid], (err) => { // <-- Use 'req.userid' here
             if (err) {
                 console.error(err);
                 return res.status(500).json({ error: 'An error occurred while removing the user from onlines' });
             }
+        
+            console.log(`User ${req.userid} has been deleted`);
+ 
+        });
+
+        // Delete user from users
+        db.run('DELETE FROM users WHERE id = ?', [req.userid], (err) => { // <-- Use 'req.userid' here
+            if (err) {
+                console.error(err);
+                return res.status(500).json({ error: 'An error occurred while removing the user from users' });
+            }
 
             console.log(`User ${req.userid} has been deleted`);
-            res.json({ message: `User ${req.userid} has been deleted.` });
+            res.json({ message: `User ${req.userid} has been deleted from users and onlines.` });
         });
+
+
     });
 
     // Return new updated route items.

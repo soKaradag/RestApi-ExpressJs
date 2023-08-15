@@ -111,6 +111,7 @@ function postRoutes(db, verifyJWT) {
 
     //Get all posts
     router.get("/", (_, res) => {
+        console.log("trying to fetch psots");
         db.all('SELECT id, title, content, userid, username FROM posts', (err, row) => {
             if (err) {
                 console.error(err);
@@ -154,6 +155,23 @@ function postRoutes(db, verifyJWT) {
                 return res.status(500).json({ error: "An error occurred while fetching user's posts from the database", details: err.message });
             }
             res.json(row); // Değiştirilen satır
+        });
+    });
+
+    //Search post in database
+    router.post("/search", (req, res) => {
+        // Take search key
+        const searchTerm = req.body.searchTerm;
+        console.log(`Trying to search ${searchTerm}`)
+
+        // Make search in database according to key
+        db.all('SELECT id, title, content, userid, username FROM posts WHERE title LIKE ?', [`%${searchTerm}%`], (err, rows) => {
+            if (err) {
+                console.error(err);
+                res.status(500).json({ error: 'An error occurred while searching for posts', details: err.message });
+            } else {
+                res.json(rows);
+            }
         });
     });
 

@@ -50,7 +50,10 @@ function postRoutes(db, verifyJWT) {
             return res.status(400).json({ error: 'User ID, username, title, and content are required' });
         }
 
-        db.run('INSERT INTO posts (userid, username, title, content) VALUES (?,?,?,?)', [req.currentUserId, req.currentusername, title, content], (err) => {
+        const currentDate = new Date();
+        const dateString = currentDate.toISOString();
+
+        db.run('INSERT INTO posts (userid, username, title, content, createdAt) VALUES (?,?,?,?,?)', [req.currentUserId, req.currentusername, title, content, dateString], (err) => {
             if (err) {
                 console.error(err);
                 return res.status(500).json({ error: 'An error occurred while adding the post to the database' });
@@ -58,6 +61,7 @@ function postRoutes(db, verifyJWT) {
 
             res.json({ message: "Post added successfully" });
             console.log("post added successfuly");
+            console.log(`tabi: ${dateString}`)
         });
 
     });
@@ -111,8 +115,8 @@ function postRoutes(db, verifyJWT) {
 
     //Get all posts
     router.get("/", (_, res) => {
-        console.log("trying to fetch psots");
-        db.all('SELECT id, title, content, userid, username FROM posts', (err, row) => {
+        console.log("trying to fetch posts");
+        db.all('SELECT id, title, content, userid, username, createdAt FROM posts', (err, row) => {
             if (err) {
                 console.error(err);
                 res.status(500).json({ error: 'An error occurred while retrieving data from the database', details: err.message });

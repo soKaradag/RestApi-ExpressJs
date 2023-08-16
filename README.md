@@ -26,3 +26,7 @@ Delete Post -> baseURL/posts/:id
 Add Post -> baseURL/posts/addPost
 
 Search Post -> baseURL/posts/search
+
+#### Exemple Projects
+
+iOS-SwiftUI -> https://github.com/soKaradag/RestApi-CrudApp

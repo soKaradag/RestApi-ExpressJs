@@ -90,7 +90,60 @@ function likeRoutes(db, verifyJWT) {
                 res.json({ message: "Like added successfully" });
             });
         });
-    }); 
+    });
+
+    //Delete Like
+    router.delete("/deleteLike", (req, res) => {
+        // Take input from user
+        const postid = req.body.postid;
+        const token = req.header('Authorization')?.replace('Bearer ', '');
+    
+        // Check token is empty
+        if (!token) {
+            return res.status(401).json({ error: 'Authorization token not provided' });
+        }
+    
+        // Verify token
+        const decodedToken = verifyJWT(token);
+        if (!decodedToken) {
+            return res.status(401).json({ error: 'Invalid or expired token' });
+        }
+    
+        // Add user ID to the request object from decoded token
+        req.currentUserId = decodedToken.id;
+        req.currentusername = decodedToken.username;
+    
+        // Input validation
+        if (!req.currentUserId || !req.currentusername || !postid) {
+            return res.status(400).json({ error: 'User ID, username, and postid are required' });
+        }
+    
+        // Check if the like exists and get its owner ID
+        db.get('SELECT userid, postid FROM likes WHERE postid = ?', [postid], (err, like) => {
+            if (err) {
+                console.log(err);
+                return res.status(500).json({ error: "An error occurred while fetching the likes from the database", details: err.message });
+            }
+    
+            if (!like) {
+                return res.status(404).json({ error: "Like not found" });
+            }
+    
+            if (like.userid !== req.currentUserId) {
+                return res.status(403).json({ error: "You are not authorized to delete this like" });
+            }
+    
+            // Delete the like from the database
+            db.run('DELETE FROM likes WHERE postid = ?', [postid], (err) => {
+                if (err) {
+                    console.error(err);
+                    return res.status(500).json({ error: "An error occurred while deleting the like from the database", details: err.message });
+                }
+    
+                res.json({ message: "Like deleted successfully" });
+            });
+        });
+    });
 
 
     //Return new updated route items.

@@ -13,8 +13,6 @@ const { verifyJWT } = require('./security/jwt');
 //Create express app
 const app = express();
 
-//Add Rate Limit
-app.use(limiter);
 
 // Middleware - Express JSON Parser
 app.use(express.json());
@@ -36,6 +34,7 @@ db.serialize(() => {
     db.run('CREATE TABLE IF NOT EXISTS posts (id INTEGER PRIMARY KEY AUTOINCREMENT, userid INTEGER, username TEXT, title TEXT, content TEXT, createdAt TEXT)');
     db.run('CREATE TABLE IF NOT EXISTS onlines (userid INTEGER, username TEXT)');
     db.run('CREATE TABLE IF NOT EXISTS likes (postid INTEGER, userid INTEGER, username TEXT, createdAt TEXT)');
+    db.run('CREATE TABLE IF NOT EXISTS comments (id INTEGER PRIMARY KEY AUTOINCREMENT, postid INTEGER, userid INTEGER, username TEXT, content TEXT, createdAt TEXT)');
 });
 
 

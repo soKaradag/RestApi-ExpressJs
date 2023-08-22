@@ -5,6 +5,7 @@ const userRoutes = require("./routes/users");
 const authRoutes = require("./routes/auth");
 const postRoutes = require("./routes/posts");
 const likeRoutes = require("./routes/likes");
+const commentRoutes = require("./routes/comments");
 const limiter = require('./security/rateLimit');
 const jwt = require('./security/jwt');
 const { verifyJWT } = require('./security/jwt');

@@ -78,4 +78,83 @@ function commentRoutes(db, verifyJWT) {
         });
     });
 
+    //Delete Comment
+    router.delete("/deleteComment/:commentid", (req, res) => {
+        const commentId = req.params.commentid;
+        const token = req.header('Authorization')?.replace('Bearer ', '');
+
+        // Check token is empty
+        if (!token) {
+            return res.status(401).json({ error: 'Authorization token not provided' });
+        }
+
+        // Verify token
+        const decodedToken = verifyJWT(token);
+        if (!decodedToken) {
+            return res.status(401).json({ error: 'Invalid or expired token' });
+        }
+
+        // Add user ID to the request object from decoded token
+        req.currentUserId = decodedToken.id;
+        req.currentusername = decodedToken.username;
+
+        // Check if the comment exists and get its owner ID
+        db.get('SELECT userid, postid FROM comments WHERE id = ?', [commentId], (err, comment) => {
+            if (err) {
+                console.log(err);
+                return res.status(500).json({ error: "An error occurred while fetching the comment from the database", details: err.message });
+            }
+
+            if (!comment) {
+                return res.status(404).json({ error: "Comment not found" });
+            }
+
+            // Check if the comment belongs to the user or if it's on the user's post
+            if (comment.userid !== req.currentUserId) {
+                // Comment doesn't belong to the user, check if it's on the user's post
+                db.get('SELECT userid FROM posts WHERE id = ?', [comment.postid], (err, post) => {
+                    if (err) {
+                        console.log(err);
+                        return res.status(500).json({ error: "An error occurred while fetching the post from the database", details: err.message });
+                    }
+
+                    if (!post) {
+                        return res.status(404).json({ error: "Post not found" });
+                    }
+
+                    if (post.userid !== req.currentUserId) {
+                        // Comment is neither the user's nor on the user's post
+                        return res.status(403).json({ error: "You are not authorized to delete this comment" });
+                    }
+
+                    // Delete the comment from the database
+                    db.run('DELETE FROM comments WHERE id = ?', commentId, (err) => {
+                        if (err) {
+                            console.error(err);
+                            return res.status(500).json({ error: "An error occurred while deleting the comment from the database", details: err.message });
+                        }
+
+                        res.json({ message: "Comment deleted successfully" });
+                    });
+                });
+            } else {
+                // Comment belongs to the user, they can delete it
+                // Delete the comment from the database
+                db.run('DELETE FROM comments WHERE id = ?', commentId, (err) => {
+                    if (err) {
+                        console.error(err);
+                        return res.status(500).json({ error: "An error occurred while deleting the comment from the database", details: err.message });
+                    }
+
+                    res.json({ message: "Comment deleted successfully" });
+                });
+            }
+        });
+    });
+
+
+    return router;
+
 }
+
+module.exports = commentRoutes;

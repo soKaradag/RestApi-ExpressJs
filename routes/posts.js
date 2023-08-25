@@ -112,41 +112,83 @@ function postRoutes(db, verifyJWT) {
         });
     });
 
-
-    //Get all posts
-    router.get("/", (_, res) => {
-        console.log("trying to fetch posts");
-        db.all('SELECT id, title, content, userid, username, createdAt FROM posts', (err, row) => {
+    //Get posts and post's likes
+    router.get("/", (req, res) => {
+        db.all(`
+            SELECT
+                posts.id AS post_id,
+                posts.title AS post_title,
+                posts.content AS post_content,
+                posts.userid AS post_userid,
+                posts.username AS post_username,
+                posts.createdAt AS post_createdAt,
+                likes.id AS like_id,
+                likes.userid AS like_userid,
+                likes.username AS like_username,
+                likes.createdAt AS like_createdAt
+            FROM posts
+            LEFT JOIN likes ON posts.id = likes.postid
+        `, (err, rows) => {
             if (err) {
                 console.error(err);
-                res.status(500).json({ error: 'An error occurred while retrieving data from the database', details: err.message });
+                return res.status(500).json({ error: "Veritabanından veriler alınırken bir hata oluştu", details: err.message });
+            }
+
+            if (rows.length > 0) {
+                //Create an array for process each post
+                const postsWithLikes = [];
+
+                // Pick first post and assign to temporary variable
+                let currentPost = {
+                    post_id: rows[0].post_id,
+                    post_title: rows[0].post_title,
+                    post_content: rows[0].post_content,
+                    post_userid: rows[0].post_userid,
+                    post_username: rows[0].post_username,
+                    post_createdAt: rows[0].post_createdAt,
+                    likes: []
+                };
+
+                // Loop over Rows and commit each row
+                rows.forEach(row => {
+                    // If the post_id of the current post and the row being processed is not the same, it means you have moved on to the next post.
+                    if (row.post_id !== currentPost.post_id) {
+                        postsWithLikes.push(currentPost);
+
+                        // Create a new post and update the temporary variable
+                        currentPost = {
+                            post_id: row.post_id,
+                            post_title: row.post_title,
+                            post_content: row.post_content,
+                            post_userid: row.post_userid,
+                            post_username: row.post_username,
+                            post_createdAt: row.post_createdAt,
+                            likes: []
+                        };
+                    }
+
+                    // Add the like information on this line to the "likes" array of the current post
+                    if (row.like_id !== null) {
+                        currentPost.likes.push({
+                            like_id: row.like_id,
+                            like_userid: row.like_userid,
+                            like_username: row.like_username,
+                            like_createdAt: row.like_createdAt
+                        });
+                    }
+                });
+
+                // Add the last post to the postsWithLikes array
+                postsWithLikes.push(currentPost);
+
+                res.json(postsWithLikes);
+                console.log(postsWithLikes[0])
             } else {
-                if (row) {
-                    res.json(row);
-                } else {
-                    res.status(404).json({ message: 'Post not found' });
-                }
+                res.status(404).json({ message: 'Gönderi bulunamadı' });
             }
         });
     });
-
-    //Get specific post
-    router.get("/:id", (req,res) => {
-        //Get post id
-        const postid = req.params.id;
-
-        //Call specific post from database by id
-        db.get('SELECT * FROM posts WHERE id = ?', [postid], (err) => {
-            //If there is an error
-            if (err) {
-                console.error(err);
-                //Return error code as a response
-                return res.status(500).json({ error: "An error occurred while fetching post from the database", details: err.message });
-            }
-            //If no error response successful message.
-            res.json({ message: "Post fetched successfully" });
-        });
-    });
+    
 
     //Get specific user's posts
     router.get("/:userid/posts", (req, res) => {

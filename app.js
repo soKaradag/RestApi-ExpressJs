@@ -29,12 +29,15 @@ app.listen(HTTP_PORT, () => {
 //Define database
 const db = new sqlite3.Database('.database.db');
 
-//Create database
+// Create the database tables
 db.serialize(() => {
     db.run('CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, password TEXT)');
     db.run('CREATE TABLE IF NOT EXISTS posts (id INTEGER PRIMARY KEY AUTOINCREMENT, userid INTEGER, username TEXT, title TEXT, content TEXT, createdAt TEXT)');
     db.run('CREATE TABLE IF NOT EXISTS onlines (userid INTEGER, username TEXT)');
-    db.run('CREATE TABLE IF NOT EXISTS likes (postid INTEGER, userid INTEGER, username TEXT, createdAt TEXT)');
+    
+    // Create the likes table with an id column
+    db.run('CREATE TABLE IF NOT EXISTS likes (id INTEGER PRIMARY KEY AUTOINCREMENT, postid INTEGER, userid INTEGER, username TEXT, createdAt TEXT)');
+    
     db.run('CREATE TABLE IF NOT EXISTS comments (id INTEGER PRIMARY KEY AUTOINCREMENT, postid INTEGER, userid INTEGER, username TEXT, content TEXT, createdAt TEXT)');
 });
 

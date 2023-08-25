@@ -25,20 +25,6 @@ function likeRoutes(db, verifyJWT) {
         next();
     });
 
-    //Fetch specific post's likes
-    router.get("/:postid/likes", (req, res) => {
-        const postid = req.params.postid;
-    
-        // Call likes of a specific post from the database by postid
-        db.all('SELECT * FROM likes WHERE postid = ?', postid, (err, row) => {
-            if (err) {
-                console.error(err);
-                return res.status(500).json({ error: "An error occurred while fetching user's posts from the database", details: err.message });
-            }
-            res.json(row);
-        });
-    });
-
     //Add Likes
     router.post("/addLike", (req, res) =>  {
         // Take input from user
@@ -117,7 +103,6 @@ function likeRoutes(db, verifyJWT) {
         if (!req.currentUserId || !req.currentusername || !postid) {
             return res.status(400).json({ error: 'User ID, username, and postid are required' });
         }
-        console.log("trying to delete like");
         console.log(`postid: ${postid} ${req.currentUserId} ${req.currentusername}`)
 
         // Check if the like exists and get its owner ID
@@ -126,15 +111,10 @@ function likeRoutes(db, verifyJWT) {
                 console.log(err);
                 return res.status(500).json({ error: "An error occurred while fetching the likes from the database", details: err.message });
             }
-            console.log("trying to delete like2");
             if (!like) {
                 return res.status(404).json({ error: "Like not found" });
                 
             }
-            console.log("trying to delete like3");
-
-
-            console.log("here db part for delete like");
     
             // Delete the like from the database
             db.run('DELETE FROM likes WHERE postid = ? AND userid = ?', [postid, req.currentUserId], (err) => {

@@ -29,7 +29,7 @@ function commentRoutes(db, verifyJWT) {
         // Take input from user
         const { postid, content } = req.body;
         const token = req.header('Authorization')?.replace('Bearer ', '');
-
+        console.log("trying to add comment")
         // Check token is empty
         if (!token) {
             return res.status(401).json({ error: 'Authorization token not provided' });
@@ -46,26 +46,35 @@ function commentRoutes(db, verifyJWT) {
         req.currentusername = decodedToken.username;
 
         // Input validation
-        if (!req.currentUserId || !req.currentusername || !postid) {
+        if (!req.currentUserId || !req.currentusername || !postid || !content) {
             return res.status(400).json({ error: 'User ID, username and postid are required' });
         }
 
         // Fetch current date and transform to string
         const currentDate = new Date();
         const dateString = currentDate.toISOString();
-
+        console.log("trying to add comment")
         db.run('INSERT INTO comments (userid, username, postid, createdAt, content) VALUES (?,?,?,?,?)', [req.currentUserId, req.currentusername, postid, dateString, content], (err) => {
             if (err) {
                 console.error(err);
                 return res.status(500).json({ error: 'An error occurred while adding the post to the database' });
             }
 
-            res.json({ message: "Like added successfully" });
+            console.log("trying to add comment succes")
+            const addedComment = {
+                userid: req.currentUserId,
+                username: req.currentusername,
+                postid: postid,
+                createdAt: dateString,
+                content: content
+            };
+            console.log("comment:", JSON.stringify(addedComment));
+            res.json({ message: "Comment added successfully" });
         });
     });
 
     //Delete Comment
-    router.delete("/deleteComment/:commentid", (req, res) => {
+    router.delete("/deleteComment", (req, res) => {
         const commentId = req.params.commentid;
         const token = req.header('Authorization')?.replace('Bearer ', '');
 

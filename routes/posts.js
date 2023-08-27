@@ -112,86 +112,82 @@ function postRoutes(db, verifyJWT) {
         });
     });
 
-    //Get posts and post's likes
     router.get("/", (req, res) => {
         db.all(`
-        SELECT
-            posts.id AS post_id,
-            posts.title AS post_title,
-            posts.content AS post_content,
-            posts.userid AS post_userid,
-            posts.username AS post_username,
-            posts.createdAt AS post_createdAt,
-            likes.id AS like_id,
-            likes.userid AS like_userid,
-            likes.username AS like_username,
-            likes.createdAt AS like_createdAt,
-            comments.id AS comment_id,
-            comments.userid AS comment_userid,
-            comments.username AS comment_username,
-            comments.content AS comment_content,
-            comments.createdAt AS comment_createdAt
-        FROM posts
-        LEFT JOIN likes ON posts.id = likes.postid
-        LEFT JOIN comments ON posts.id = comments.postid
-        `, (err, rows) => {
+            SELECT
+                posts.id AS post_id,
+                posts.title AS post_title,
+                posts.content AS post_content,
+                posts.userid AS post_userid,
+                posts.username AS post_username,
+                posts.createdAt AS post_createdAt
+            FROM posts
+        `, (err, postRows) => {
             if (err) {
                 console.error(err);
-                return res.status(500).json({ error: "Veritabanından veriler alınırken bir hata oluştu", details: err.message });
+                return res.status(500).json({ error: "Veritabanından gönderiler alınırken bir hata oluştu", details: err.message });
             }
-
-            if (rows.length > 0) {
-                //Create an array for process each post
-                const postsWithLikes = [];
-
-                // Pick first post and assign to temporary variable
-                let currentPost = {
-                    post_id: rows[0].post_id,
-                    post_title: rows[0].post_title,
-                    post_content: rows[0].post_content,
-                    post_userid: rows[0].post_userid,
-                    post_username: rows[0].post_username,
-                    post_createdAt: rows[0].post_createdAt,
-                    likes: []
+    
+            if (postRows.length === 0) {
+                return res.status(404).json({ message: 'Gönderi bulunamadı' });
+            }
+    
+            // Tüm postları tutacak bir dizi oluştur
+            const postsWithLikesAndComments = [];
+    
+            // Postları işle
+            postRows.forEach(postRow => {
+                const post = {
+                    post_id: postRow.post_id,
+                    post_title: postRow.post_title,
+                    post_content: postRow.post_content,
+                    post_userid: postRow.post_userid,
+                    post_username: postRow.post_username,
+                    post_createdAt: postRow.post_createdAt,
+                    likes: [], // Her postun beğenilerini tutacak dizi
+                    comments: [] // Her postun yorumlarını tutacak dizi
                 };
-
-                // Loop over Rows and commit each row
-                rows.forEach(row => {
-                    // If the post_id of the current post and the row being processed is not the same, it means you have moved on to the next post.
-                    if (row.post_id !== currentPost.post_id) {
-                        postsWithLikes.push(currentPost);
-
-                        // Create a new post and update the temporary variable
-                        currentPost = {
-                            post_id: row.post_id,
-                            post_title: row.post_title,
-                            post_content: row.post_content,
-                            post_userid: row.post_userid,
-                            post_username: row.post_username,
-                            post_createdAt: row.post_createdAt,
-                            likes: []
-                        };
+    
+                // Beğenileri al ve ilgili postun beğeniler dizisine ekle
+                db.all(`
+                    SELECT
+                        likes.id AS like_id,
+                        likes.userid AS like_userid,
+                        likes.username AS like_username,
+                        likes.createdAt AS like_createdAt
+                    FROM likes
+                    WHERE likes.postid = ?
+                `, [post.post_id], (likeErr, likeRows) => {
+                    if (!likeErr) {
+                        post.likes = likeRows;
                     }
-
-                    // Add the like information on this line to the "likes" array of the current post
-                    if (row.like_id !== null) {
-                        currentPost.likes.push({
-                            like_id: row.like_id,
-                            like_userid: row.like_userid,
-                            like_username: row.like_username,
-                            like_createdAt: row.like_createdAt
-                        });
-                    }
+    
+                    // Yorumları al ve ilgili postun yorumlar dizisine ekle
+                    db.all(`
+                        SELECT
+                            comments.id AS comment_id,
+                            comments.userid AS comment_userid,
+                            comments.username AS comment_username,
+                            comments.content AS comment_content,
+                            comments.createdAt AS comment_createdAt
+                        FROM comments
+                        WHERE comments.postid = ?
+                    `, [post.post_id], (commentErr, commentRows) => {
+                        if (!commentErr) {
+                            post.comments = commentRows;
+                        }
+    
+                        // Her şey tamamlandığında post'u ana diziye ekle
+                        postsWithLikesAndComments.push(post);
+    
+                        // Tüm postlar işlendiğinde sonucu gönder
+                        if (postsWithLikesAndComments.length === postRows.length) {
+                            res.json(postsWithLikesAndComments);
+                            console.log("Gönderiler getirildi", JSON.stringify(postsWithLikesAndComments));
+                        }
+                    });
                 });
-
-                // Add the last post to the postsWithLikes array
-                postsWithLikes.push(currentPost);
-
-                res.json(postsWithLikes);
-                console.log("post fetched")
-            } else {
-                res.status(404).json({ message: 'Post cant find.' });
-            }
+            });
         });
     });
 
@@ -227,53 +223,47 @@ function postRoutes(db, verifyJWT) {
             }
 
             if (rows.length > 0) {
-                //Create an array for process each post
-                const postsWithLikes = [];
-
-                // Pick first post and assign to temporary variable
-                let currentPost = {
-                    post_id: rows[0].post_id,
-                    post_title: rows[0].post_title,
-                    post_content: rows[0].post_content,
-                    post_userid: rows[0].post_userid,
-                    post_username: rows[0].post_username,
-                    post_createdAt: rows[0].post_createdAt,
-                    likes: []
-                };
+                //Create an array for processing each post
+                const postsWithLikesAndComments = [];
 
                 // Loop over Rows and commit each row
                 rows.forEach(row => {
-                    // If the post_id of the current post and the row being processed is not the same, it means you have moved on to the next post.
-                    if (row.post_id !== currentPost.post_id) {
-                        postsWithLikes.push(currentPost);
-
-                        // Create a new post and update the temporary variable
-                        currentPost = {
-                            post_id: row.post_id,
-                            post_title: row.post_title,
-                            post_content: row.post_content,
-                            post_userid: row.post_userid,
-                            post_username: row.post_username,
-                            post_createdAt: row.post_createdAt,
-                            likes: []
-                        };
-                    }
+                    const post = {
+                        post_id: row.post_id,
+                        post_title: row.post_title,
+                        post_content: row.post_content,
+                        post_userid: row.post_userid,
+                        post_username: row.post_username,
+                        post_createdAt: row.post_createdAt,
+                        likes: [],
+                        comments: []
+                    };
 
                     // Add the like information on this line to the "likes" array of the current post
                     if (row.like_id !== null) {
-                        currentPost.likes.push({
+                        post.likes.push({
                             like_id: row.like_id,
                             like_userid: row.like_userid,
                             like_username: row.like_username,
                             like_createdAt: row.like_createdAt
                         });
                     }
+
+                    // Add the comment information on this line to the "comments" array of the current post
+                    if (row.comment_id !== null) {
+                        post.comments.push({
+                            comment_id: row.comment_id,
+                            comment_userid: row.comment_userid,
+                            comment_username: row.comment_username,
+                            comment_content: row.comment_content,
+                            comment_createdAt: row.comment_createdAt
+                        });
+                    }
+
+                    postsWithLikesAndComments.push(post);
                 });
 
-                // Add the last post to the postsWithLikes array
-                postsWithLikes.push(currentPost);
-
-                res.json(postsWithLikes);
+                res.json(postsWithLikesAndComments);
                 console.log("post fetched")
             } else {
                 res.status(404).json({ message: 'Post cant find.' });
@@ -325,7 +315,8 @@ function postRoutes(db, verifyJWT) {
                     post_userid: rows[0].post_userid,
                     post_username: rows[0].post_username,
                     post_createdAt: rows[0].post_createdAt,
-                    likes: []
+                    likes: [],
+                    comments: []
                 };
 
                 rows.forEach(row => {
@@ -338,7 +329,8 @@ function postRoutes(db, verifyJWT) {
                             post_userid: row.post_userid,
                             post_username: row.post_username,
                             post_createdAt: row.post_createdAt,
-                            likes: []
+                            likes: [],
+                            comments: []
                         };
                     }
 

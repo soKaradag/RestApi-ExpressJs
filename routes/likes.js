@@ -25,7 +25,7 @@ function likeRoutes(db, verifyJWT) {
         next();
     });
 
-    //Add Likes
+        //Add Likes
     router.post("/addLike", (req, res) =>  {
         // Take input from user
         const postid = req.body.postid;
@@ -48,7 +48,7 @@ function likeRoutes(db, verifyJWT) {
 
         // Input validation
         if (!req.currentUserId || !req.currentusername || !postid) {
-            return res.status(400).json({ error: 'User ID, username and postid are required' });
+            return res.status(400).json({ error: 'User ID, username, and postid are required' });
         }
 
         // Check if the user has already liked the post
@@ -63,7 +63,7 @@ function likeRoutes(db, verifyJWT) {
                 return res.status(400).json({ error: 'User has already liked the post' });
             }
 
-            // Fetch current date and transform to string
+            // User hasn't liked the post before, so you can add a new like
             const currentDate = new Date();
             const dateString = currentDate.toISOString();
 

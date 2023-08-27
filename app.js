@@ -54,6 +54,9 @@ app.use("/posts", postRoutes(db, verifyJWT));
 //Add like routes
 app.use("/likes", likeRoutes(db, verifyJWT));
 
+//Add comment routes
+app.use("/comments", commentRoutes(db, verifyJWT));
+
 
 //Default response
 app.use(function (req, res) {

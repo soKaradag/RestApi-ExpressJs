@@ -24,20 +24,6 @@ function commentRoutes(db, verifyJWT) {
         next();
     });
 
-    //Fetch specific post's comments
-    router.get("/:postid/comments", (req, res) => {
-        const postid = req.params.postid;
-    
-        // Call comments of a specific post from the database by postid
-        db.all('SELECT * FROM comments WHERE postid = ?', postid, (err, row) => {
-            if (err) {
-                console.error(err);
-                return res.status(500).json({ error: "An error occurred while fetching posts's comments from the database", details: err.message });
-            }
-            res.json(row);
-        });
-    }); 
-
     //Add Comment
     router.post("/addComment", (req, res) =>  {
         // Take input from user

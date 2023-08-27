@@ -115,19 +115,25 @@ function postRoutes(db, verifyJWT) {
     //Get posts and post's likes
     router.get("/", (req, res) => {
         db.all(`
-            SELECT
-                posts.id AS post_id,
-                posts.title AS post_title,
-                posts.content AS post_content,
-                posts.userid AS post_userid,
-                posts.username AS post_username,
-                posts.createdAt AS post_createdAt,
-                likes.id AS like_id,
-                likes.userid AS like_userid,
-                likes.username AS like_username,
-                likes.createdAt AS like_createdAt
-            FROM posts
-            LEFT JOIN likes ON posts.id = likes.postid
+        SELECT
+            posts.id AS post_id,
+            posts.title AS post_title,
+            posts.content AS post_content,
+            posts.userid AS post_userid,
+            posts.username AS post_username,
+            posts.createdAt AS post_createdAt,
+            likes.id AS like_id,
+            likes.userid AS like_userid,
+            likes.username AS like_username,
+            likes.createdAt AS like_createdAt,
+            comments.id AS comment_id,
+            comments.userid AS comment_userid,
+            comments.username AS comment_username,
+            comments.content AS comment_content,
+            comments.createdAt AS comment_createdAt
+        FROM posts
+        LEFT JOIN likes ON posts.id = likes.postid
+        LEFT JOIN comments ON posts.id = comments.postid
         `, (err, rows) => {
             if (err) {
                 console.error(err);
@@ -194,7 +200,7 @@ function postRoutes(db, verifyJWT) {
         const userid = req.params.userid;
         
         db.all(`
-            SELECT
+        SELECT
             posts.id AS post_id,
             posts.title AS post_title,
             posts.content AS post_content,
@@ -204,9 +210,15 @@ function postRoutes(db, verifyJWT) {
             likes.id AS like_id,
             likes.userid AS like_userid,
             likes.username AS like_username,
-            likes.createdAt AS like_createdAt
+            likes.createdAt AS like_createdAt,
+            comments.id AS comment_id,
+            comments.userid AS comment_userid,
+            comments.username AS comment_username,
+            comments.content AS comment_content,
+            comments.createdAt AS comment_createdAt
         FROM posts
         LEFT JOIN likes ON posts.id = likes.postid
+        LEFT JOIN comments ON posts.id = comments.postid
         WHERE posts.userid = ?;
         `, userid, (err, rows) => {
             if (err) {
@@ -270,76 +282,82 @@ function postRoutes(db, verifyJWT) {
     });
 
 
-//Search post in database
-router.post("/search", (req, res) => {
-    // Take search key
-    const searchTerm = req.body.searchTerm;
-    console.log(`Trying to search ${searchTerm}`)
+    //Search post in database
+    router.post("/search", (req, res) => {
+        // Take search key
+        const searchTerm = req.body.searchTerm;
+        console.log(`Trying to search ${searchTerm}`)
 
-    // Make search in database according to key
-    db.all(`
-        SELECT
-            posts.id AS post_id,
-            posts.title AS post_title,
-            posts.content AS post_content,
-            posts.userid AS post_userid,
-            posts.username AS post_username,
-            posts.createdAt AS post_createdAt,
-            likes.id AS like_id,
-            likes.userid AS like_userid,
-            likes.username AS like_username,
-            likes.createdAt AS like_createdAt
-        FROM posts
-        LEFT JOIN likes ON posts.id = likes.postid
-        WHERE posts.title LIKE ?
-    `, [`%${searchTerm}%`], (err, rows) => {
-        if (err) {
-            console.error(err);
-            res.status(500).json({ error: 'An error occurred while searching for posts', details: err.message });
-        } else {
-            // Aynı formatta dönüş yapmak için her bir satırı işleyin
-            const postsWithLikes = [];
+        // Make search in database according to key
+        db.all(`
+            SELECT
+                posts.id AS post_id,
+                posts.title AS post_title,
+                posts.content AS post_content,
+                posts.userid AS post_userid,
+                posts.username AS post_username,
+                posts.createdAt AS post_createdAt,
+                likes.id AS like_id,
+                likes.userid AS like_userid,
+                likes.username AS like_username,
+                likes.createdAt AS like_createdAt,
+                comments.id AS comment_id,
+                comments.userid AS comment_userid,
+                comments.username AS comment_username,
+                comments.content AS comment_content,
+                comments.createdAt AS comment_createdAt
+            FROM posts
+            LEFT JOIN likes ON posts.id = likes.postid
+            LEFT JOIN comments ON posts.id = comments.postid
+            WHERE posts.title LIKE ?
+        `, [`%${searchTerm}%`], (err, rows) => {
+            if (err) {
+                console.error(err);
+                res.status(500).json({ error: 'An error occurred while searching for posts', details: err.message });
+            } else {
+                // Aynı formatta dönüş yapmak için her bir satırı işleyin
+                const postsWithLikes = [];
 
-            let currentPost = {
-                post_id: rows[0].post_id,
-                post_title: rows[0].post_title,
-                post_content: rows[0].post_content,
-                post_userid: rows[0].post_userid,
-                post_username: rows[0].post_username,
-                post_createdAt: rows[0].post_createdAt,
-                likes: []
-            };
+                let currentPost = {
+                    post_id: rows[0].post_id,
+                    post_title: rows[0].post_title,
+                    post_content: rows[0].post_content,
+                    post_userid: rows[0].post_userid,
+                    post_username: rows[0].post_username,
+                    post_createdAt: rows[0].post_createdAt,
+                    likes: []
+                };
 
-            rows.forEach(row => {
-                if (row.post_id !== currentPost.post_id) {
-                    postsWithLikes.push(currentPost);
-                    currentPost = {
-                        post_id: row.post_id,
-                        post_title: row.post_title,
-                        post_content: row.post_content,
-                        post_userid: row.post_userid,
-                        post_username: row.post_username,
-                        post_createdAt: row.post_createdAt,
-                        likes: []
-                    };
-                }
+                rows.forEach(row => {
+                    if (row.post_id !== currentPost.post_id) {
+                        postsWithLikes.push(currentPost);
+                        currentPost = {
+                            post_id: row.post_id,
+                            post_title: row.post_title,
+                            post_content: row.post_content,
+                            post_userid: row.post_userid,
+                            post_username: row.post_username,
+                            post_createdAt: row.post_createdAt,
+                            likes: []
+                        };
+                    }
 
-                if (row.like_id !== null) {
-                    currentPost.likes.push({
-                        like_id: row.like_id,
-                        like_userid: row.like_userid,
-                        like_username: row.like_username,
-                        like_createdAt: row.like_createdAt
-                    });
-                }
-            });
+                    if (row.like_id !== null) {
+                        currentPost.likes.push({
+                            like_id: row.like_id,
+                            like_userid: row.like_userid,
+                            like_username: row.like_username,
+                            like_createdAt: row.like_createdAt
+                        });
+                    }
+                });
 
-            postsWithLikes.push(currentPost);
+                postsWithLikes.push(currentPost);
 
-            res.json(postsWithLikes);
-        }
+                res.json(postsWithLikes);
+            }
+        });
     });
-});
 
     return router;
 }

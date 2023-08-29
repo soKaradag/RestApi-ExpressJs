@@ -187,13 +187,17 @@ function postRoutes(db, verifyJWT) {
                     });
                 });
             });
+            // Eğer postRows boşsa sadece boş bir dizi döndür
+            if (postRows.length === 0) {
+                res.json([]);
+            }
         });
     });
 
     
     router.get("/:userid/posts", (req, res) => {
         const userid = req.params.userid;
-
+    
         db.all(`
             SELECT
                 posts.id AS post_id,
@@ -204,14 +208,10 @@ function postRoutes(db, verifyJWT) {
                 posts.createdAt AS post_createdAt
             FROM posts
             WHERE posts.userid = ?;
-        `,userid, (err, postRows) => {
+        `, userid, (err, postRows) => {
             if (err) {
                 console.error(err);
                 return res.status(500).json({ error: "Veritabanından gönderiler alınırken bir hata oluştu", details: err.message });
-            }
-    
-            if (postRows.length === 0) {
-                return res.status(404).json({ message: 'Gönderi bulunamadı' });
             }
     
             // Tüm postları tutacak bir dizi oluştur
@@ -269,6 +269,11 @@ function postRoutes(db, verifyJWT) {
                     });
                 });
             });
+    
+            // Eğer postRows boşsa sadece boş bir dizi döndür
+            if (postRows.length === 0) {
+                res.json([]);
+            }
         });
     });
 
@@ -291,10 +296,6 @@ function postRoutes(db, verifyJWT) {
                 return res.status(500).json({ error: "Veritabanından gönderiler alınırken bir hata oluştu", details: err.message });
             }
     
-            if (postRows.length === 0) {
-                return res.status(404).json({ message: 'Gönderi bulunamadı' });
-            }
-    
             // Tüm postları tutacak bir dizi oluştur
             const postsWithLikesAndComments = [];
     
@@ -346,10 +347,18 @@ function postRoutes(db, verifyJWT) {
                         // Tüm postlar işlendiğinde sonucu gönder
                         if (postsWithLikesAndComments.length === postRows.length) {
                             res.json(postsWithLikesAndComments);
+                            console.log("Boş");
                         }
                     });
                 });
             });
+
+            // Eğer postRows boşsa sadece boş bir dizi döndür
+            if (postRows.length === 0) {
+                res.json([]);
+                console.log("Boş");
+            }
+
         });
     });
 

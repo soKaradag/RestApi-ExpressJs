@@ -1,3 +1,21 @@
+Download nodejs first
+
+clone this project
+
+open project and:
+
+    npm install
+    
+    npm init -y
+
+download the packages
+
+start app with:
+
+    node app.js
+
+
+
 # RestApi-ExpressJs
 
 #### JWT Based Authentication

@@ -45,6 +45,20 @@ Add Post -> baseURL/posts/addPost
 
 Search Post -> baseURL/posts/search
 
+When you fetch post its return posts, post's comments and post's likes.
+
+#### Like Routes
+
+Add Like -> baseUrl/likes/addLike
+
+Delete Like -> baseUrl/likes/deleteLike
+
+#### Comment Routes
+
+Add Comment -> baseUrl/comments/addComment
+
+Delete Comment -> baseUrl/comments/deleteComment
+
 #### Exemple Projects
 
 iOS-SwiftUI -> https://github.com/soKaradag/RestApi-CrudApp

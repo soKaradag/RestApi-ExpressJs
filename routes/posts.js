@@ -112,72 +112,258 @@ function postRoutes(db, verifyJWT) {
         });
     });
 
-
-    //Get all posts
-    router.get("/", (_, res) => {
-        console.log("trying to fetch posts");
-        db.all('SELECT id, title, content, userid, username, createdAt FROM posts', (err, row) => {
+    router.get("/", (req, res) => {
+        db.all(`
+            SELECT
+                posts.id AS post_id,
+                posts.title AS post_title,
+                posts.content AS post_content,
+                posts.userid AS post_userid,
+                posts.username AS post_username,
+                posts.createdAt AS post_createdAt
+            FROM posts
+        `, (err, postRows) => {
             if (err) {
                 console.error(err);
-                res.status(500).json({ error: 'An error occurred while retrieving data from the database', details: err.message });
-            } else {
-                if (row) {
-                    res.json(row);
-                } else {
-                    res.status(404).json({ message: 'Post not found' });
-                }
+                return res.status(500).json({ error: "Veritabanından gönderiler alınırken bir hata oluştu", details: err.message });
+            }
+    
+            if (postRows.length === 0) {
+                return res.status(404).json({ message: 'Gönderi bulunamadı' });
+            }
+    
+            // Tüm postları tutacak bir dizi oluştur
+            const postsWithLikesAndComments = [];
+    
+            // Postları işle
+            postRows.forEach(postRow => {
+                const post = {
+                    post_id: postRow.post_id,
+                    post_title: postRow.post_title,
+                    post_content: postRow.post_content,
+                    post_userid: postRow.post_userid,
+                    post_username: postRow.post_username,
+                    post_createdAt: postRow.post_createdAt,
+                    likes: [], // Her postun beğenilerini tutacak dizi
+                    comments: [] // Her postun yorumlarını tutacak dizi
+                };
+    
+                // Beğenileri al ve ilgili postun beğeniler dizisine ekle
+                db.all(`
+                    SELECT
+                        likes.id AS like_id,
+                        likes.userid AS like_userid,
+                        likes.username AS like_username,
+                        likes.createdAt AS like_createdAt
+                    FROM likes
+                    WHERE likes.postid = ?
+                `, [post.post_id], (likeErr, likeRows) => {
+                    if (!likeErr) {
+                        post.likes = likeRows;
+                    }
+    
+                    // Yorumları al ve ilgili postun yorumlar dizisine ekle
+                    db.all(`
+                        SELECT
+                            comments.id AS comment_id,
+                            comments.userid AS comment_userid,
+                            comments.username AS comment_username,
+                            comments.content AS comment_content,
+                            comments.createdAt AS comment_createdAt
+                        FROM comments
+                        WHERE comments.postid = ?
+                    `, [post.post_id], (commentErr, commentRows) => {
+                        if (!commentErr) {
+                            post.comments = commentRows;
+                        }
+    
+                        // Her şey tamamlandığında post'u ana diziye ekle
+                        postsWithLikesAndComments.push(post);
+    
+                        // Tüm postlar işlendiğinde sonucu gönder
+                        if (postsWithLikesAndComments.length === postRows.length) {
+                            res.json(postsWithLikesAndComments);
+                        }
+                    });
+                });
+            });
+            // Eğer postRows boşsa sadece boş bir dizi döndür
+            if (postRows.length === 0) {
+                res.json([]);
             }
         });
     });
 
-    //Get specific post
-    router.get("/:id", (req,res) => {
-        //Get post id
-        const postid = req.params.id;
-
-        //Call specific post from database by id
-        db.get('SELECT * FROM posts WHERE id = ?', [postid], (err) => {
-            //If there is an error
-            if (err) {
-                console.error(err);
-                //Return error code as a response
-                return res.status(500).json({ error: "An error occurred while fetching post from the database", details: err.message });
-            }
-            //If no error response successful message.
-            res.json({ message: "Post fetched successfully" });
-        });
-    });
-
-    //Get specific user's posts
+    
     router.get("/:userid/posts", (req, res) => {
         const userid = req.params.userid;
     
-        // Call posts of a specific user from the database by userid
-        db.all('SELECT * FROM posts WHERE userid = ?', userid, (err, row) => {
+        db.all(`
+            SELECT
+                posts.id AS post_id,
+                posts.title AS post_title,
+                posts.content AS post_content,
+                posts.userid AS post_userid,
+                posts.username AS post_username,
+                posts.createdAt AS post_createdAt
+            FROM posts
+            WHERE posts.userid = ?;
+        `, userid, (err, postRows) => {
             if (err) {
                 console.error(err);
-                return res.status(500).json({ error: "An error occurred while fetching user's posts from the database", details: err.message });
+                return res.status(500).json({ error: "Veritabanından gönderiler alınırken bir hata oluştu", details: err.message });
             }
-            res.json(row); // Değiştirilen satır
+    
+            // Tüm postları tutacak bir dizi oluştur
+            const postsWithLikesAndComments = [];
+    
+            // Postları işle
+            postRows.forEach(postRow => {
+                const post = {
+                    post_id: postRow.post_id,
+                    post_title: postRow.post_title,
+                    post_content: postRow.post_content,
+                    post_userid: postRow.post_userid,
+                    post_username: postRow.post_username,
+                    post_createdAt: postRow.post_createdAt,
+                    likes: [], // Her postun beğenilerini tutacak dizi
+                    comments: [] // Her postun yorumlarını tutacak dizi
+                };
+    
+                // Beğenileri al ve ilgili postun beğeniler dizisine ekle
+                db.all(`
+                    SELECT
+                        likes.id AS like_id,
+                        likes.userid AS like_userid,
+                        likes.username AS like_username,
+                        likes.createdAt AS like_createdAt
+                    FROM likes
+                    WHERE likes.postid = ?
+                `, [post.post_id], (likeErr, likeRows) => {
+                    if (!likeErr) {
+                        post.likes = likeRows;
+                    }
+    
+                    // Yorumları al ve ilgili postun yorumlar dizisine ekle
+                    db.all(`
+                        SELECT
+                            comments.id AS comment_id,
+                            comments.userid AS comment_userid,
+                            comments.username AS comment_username,
+                            comments.content AS comment_content,
+                            comments.createdAt AS comment_createdAt
+                        FROM comments
+                        WHERE comments.postid = ?
+                    `, [post.post_id], (commentErr, commentRows) => {
+                        if (!commentErr) {
+                            post.comments = commentRows;
+                        }
+    
+                        // Her şey tamamlandığında post'u ana diziye ekle
+                        postsWithLikesAndComments.push(post);
+    
+                        // Tüm postlar işlendiğinde sonucu gönder
+                        if (postsWithLikesAndComments.length === postRows.length) {
+                            res.json(postsWithLikesAndComments);
+                        }
+                    });
+                });
+            });
+    
+            // Eğer postRows boşsa sadece boş bir dizi döndür
+            if (postRows.length === 0) {
+                res.json([]);
+            }
         });
     });
 
-    //Search post in database
     router.post("/search", (req, res) => {
-        // Take search key
         const searchTerm = req.body.searchTerm;
-        console.log(`Trying to search ${searchTerm}`)
-
-        // Make search in database according to key
-        db.all('SELECT id, title, content, userid, username FROM posts WHERE title LIKE ?', [`%${searchTerm}%`], (err, rows) => {
+        console.log("Gönderiler getirildi", JSON.stringify(searchTerm));
+        db.all(`
+            SELECT
+                posts.id AS post_id,
+                posts.title AS post_title,
+                posts.content AS post_content,
+                posts.userid AS post_userid,
+                posts.username AS post_username,
+                posts.createdAt AS post_createdAt
+            FROM posts
+            WHERE posts.title LIKE ?
+        `,[`%${searchTerm}%`], (err, postRows) => {
             if (err) {
                 console.error(err);
-                res.status(500).json({ error: 'An error occurred while searching for posts', details: err.message });
-            } else {
-                res.json(rows);
+                return res.status(500).json({ error: "Veritabanından gönderiler alınırken bir hata oluştu", details: err.message });
             }
+    
+            // Tüm postları tutacak bir dizi oluştur
+            const postsWithLikesAndComments = [];
+    
+            // Postları işle
+            postRows.forEach(postRow => {
+                const post = {
+                    post_id: postRow.post_id,
+                    post_title: postRow.post_title,
+                    post_content: postRow.post_content,
+                    post_userid: postRow.post_userid,
+                    post_username: postRow.post_username,
+                    post_createdAt: postRow.post_createdAt,
+                    likes: [], // Her postun beğenilerini tutacak dizi
+                    comments: [] // Her postun yorumlarını tutacak dizi
+                };
+    
+                // Beğenileri al ve ilgili postun beğeniler dizisine ekle
+                db.all(`
+                    SELECT
+                        likes.id AS like_id,
+                        likes.userid AS like_userid,
+                        likes.username AS like_username,
+                        likes.createdAt AS like_createdAt
+                    FROM likes
+                    WHERE likes.postid = ?
+                `, [post.post_id], (likeErr, likeRows) => {
+                    if (!likeErr) {
+                        post.likes = likeRows;
+                    }
+    
+                    // Yorumları al ve ilgili postun yorumlar dizisine ekle
+                    db.all(`
+                        SELECT
+                            comments.id AS comment_id,
+                            comments.userid AS comment_userid,
+                            comments.username AS comment_username,
+                            comments.content AS comment_content,
+                            comments.createdAt AS comment_createdAt
+                        FROM comments
+                        WHERE comments.postid = ?
+                    `, [post.post_id], (commentErr, commentRows) => {
+                        if (!commentErr) {
+                            post.comments = commentRows;
+                        }
+    
+                        // Her şey tamamlandığında post'u ana diziye ekle
+                        postsWithLikesAndComments.push(post);
+    
+                        // Tüm postlar işlendiğinde sonucu gönder
+                        if (postsWithLikesAndComments.length === postRows.length) {
+                            res.json(postsWithLikesAndComments);
+                            console.log("Boş");
+                        }
+                    });
+                });
+            });
+
+            // Eğer postRows boşsa sadece boş bir dizi döndür
+            if (postRows.length === 0) {
+                res.json([]);
+                console.log("Boş");
+            }
+
         });
     });
+
+    
+
 
     return router;
 }

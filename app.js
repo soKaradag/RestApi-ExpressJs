@@ -5,6 +5,7 @@ const userRoutes = require("./routes/users");
 const authRoutes = require("./routes/auth");
 const postRoutes = require("./routes/posts");
 const likeRoutes = require("./routes/likes");
+const commentRoutes = require("./routes/comments");
 const limiter = require('./security/rateLimit');
 const jwt = require('./security/jwt');
 const { verifyJWT } = require('./security/jwt');
@@ -28,12 +29,15 @@ app.listen(HTTP_PORT, () => {
 //Define database
 const db = new sqlite3.Database('.database.db');
 
-//Create database
+// Create the database tables
 db.serialize(() => {
     db.run('CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, username TEXT, password TEXT)');
     db.run('CREATE TABLE IF NOT EXISTS posts (id INTEGER PRIMARY KEY AUTOINCREMENT, userid INTEGER, username TEXT, title TEXT, content TEXT, createdAt TEXT)');
     db.run('CREATE TABLE IF NOT EXISTS onlines (userid INTEGER, username TEXT)');
-    db.run('CREATE TABLE IF NOT EXISTS likes (postid INTEGER, userid INTEGER, username TEXT, createdAt TEXT)');
+    
+    // Create the likes table with an id column
+    db.run('CREATE TABLE IF NOT EXISTS likes (id INTEGER PRIMARY KEY AUTOINCREMENT, postid INTEGER, userid INTEGER, username TEXT, createdAt TEXT)');
+    
     db.run('CREATE TABLE IF NOT EXISTS comments (id INTEGER PRIMARY KEY AUTOINCREMENT, postid INTEGER, userid INTEGER, username TEXT, content TEXT, createdAt TEXT)');
 });
 
@@ -49,6 +53,9 @@ app.use("/posts", postRoutes(db, verifyJWT));
 
 //Add like routes
 app.use("/likes", likeRoutes(db, verifyJWT));
+
+//Add comment routes
+app.use("/comments", commentRoutes(db, verifyJWT));
 
 
 //Default response

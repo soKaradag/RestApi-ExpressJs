@@ -73,9 +73,9 @@ function commentRoutes(db, verifyJWT) {
         });
     });
 
-    //Delete Comment
-    router.delete("/deleteComment", (req, res) => {
-        const commentId = req.params.commentid;
+    // Delete Comment
+    router.post("/deleteComment", (req, res) => {
+        const commentId = req.body.commentId;
         const token = req.header('Authorization')?.replace('Bearer ', '');
 
         // Check token is empty
@@ -93,6 +93,8 @@ function commentRoutes(db, verifyJWT) {
         req.currentUserId = decodedToken.id;
         req.currentusername = decodedToken.username;
 
+        console.log("trying to delete comment");
+        console.log(`commentid: ${commentId}`);
         // Check if the comment exists and get its owner ID
         db.get('SELECT userid, postid FROM comments WHERE id = ?', [commentId], (err, comment) => {
             if (err) {
@@ -103,9 +105,19 @@ function commentRoutes(db, verifyJWT) {
             if (!comment) {
                 return res.status(404).json({ error: "Comment not found" });
             }
+            console.log("trying to delete comment");
+            if (comment.userid === req.currentUserId) {
+                // Comment belongs to the user, they can delete it
+                // Delete the comment from the database
+                db.run('DELETE FROM comments WHERE id = ?', commentId, (err) => {
+                    if (err) {
+                        console.error(err);
+                        return res.status(500).json({ error: "An error occurred while deleting the comment from the database", details: err.message });
+                    }
 
-            // Check if the comment belongs to the user or if it's on the user's post
-            if (comment.userid !== req.currentUserId) {
+                    res.json({ message: "Comment deleted successfully" });
+                });
+            } else {
                 // Comment doesn't belong to the user, check if it's on the user's post
                 db.get('SELECT userid FROM posts WHERE id = ?', [comment.postid], (err, post) => {
                     if (err) {
@@ -117,31 +129,21 @@ function commentRoutes(db, verifyJWT) {
                         return res.status(404).json({ error: "Post not found" });
                     }
 
-                    if (post.userid !== req.currentUserId) {
+                    if (post.userid === req.currentUserId) {
+                        // Comment is on the user's post, they can delete it
+                        // Delete the comment from the database
+                        db.run('DELETE FROM comments WHERE id = ?', commentId, (err) => {
+                            if (err) {
+                                console.error(err);
+                                return res.status(500).json({ error: "An error occurred while deleting the comment from the database", details: err.message });
+                            }
+
+                            res.json({ message: "Comment deleted successfully" });
+                        });
+                    } else {
                         // Comment is neither the user's nor on the user's post
                         return res.status(403).json({ error: "You are not authorized to delete this comment" });
                     }
-
-                    // Delete the comment from the database
-                    db.run('DELETE FROM comments WHERE id = ?', commentId, (err) => {
-                        if (err) {
-                            console.error(err);
-                            return res.status(500).json({ error: "An error occurred while deleting the comment from the database", details: err.message });
-                        }
-
-                        res.json({ message: "Comment deleted successfully" });
-                    });
-                });
-            } else {
-                // Comment belongs to the user, they can delete it
-                // Delete the comment from the database
-                db.run('DELETE FROM comments WHERE id = ?', commentId, (err) => {
-                    if (err) {
-                        console.error(err);
-                        return res.status(500).json({ error: "An error occurred while deleting the comment from the database", details: err.message });
-                    }
-
-                    res.json({ message: "Comment deleted successfully" });
                 });
             }
         });
